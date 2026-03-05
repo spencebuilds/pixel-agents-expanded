@@ -13,6 +13,14 @@ export const TYPE_FRAME_DURATION_SEC = 0.3;
 export const CHARACTER_FRAME_WIDTH = 16;
 export const CHARACTER_FRAME_HEIGHT = 24;
 
+// ── Character State Machine ──────────────────────────────────
+export const WANDER_PAUSE_MIN_SEC = 2.0;
+export const WANDER_PAUSE_MAX_SEC = 20.0;
+export const WANDER_MOVES_BEFORE_REST_MIN = 3;
+export const WANDER_MOVES_BEFORE_REST_MAX = 6;
+export const SEAT_REST_MIN_SEC = 120.0;
+export const SEAT_REST_MAX_SEC = 240.0;
+
 // ── Rendering ────────────────────────────────────────────────
 export const CHARACTER_SITTING_OFFSET_PX = 6;
 export const CHARACTER_Z_SORT_OFFSET = 0.5;

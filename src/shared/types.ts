@@ -77,6 +77,15 @@ export const Direction = {
 } as const;
 export type Direction = (typeof Direction)[keyof typeof Direction];
 
+/** Character animation state (const-object pattern). */
+export const CharacterState = {
+  IDLE: 0,
+  WALK: 1,
+  TYPE: 2,
+} as const;
+export type CharacterState =
+  (typeof CharacterState)[keyof typeof CharacterState];
+
 /** A seat derived from chair furniture. */
 export interface Seat {
   uid: string;

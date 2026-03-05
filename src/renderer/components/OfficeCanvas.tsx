@@ -3,8 +3,11 @@ import { startGameLoop } from "../office/GameLoop";
 import { render, layoutToTileMap } from "../office/OfficeRenderer";
 import type { RenderEntity } from "../office/OfficeRenderer";
 import { TILE_SIZE, ZOOM_DEFAULT } from "../office/constants";
-import { TileType } from "../../shared/types";
+import { TileType, CharacterState } from "../../shared/types";
 import type { OfficeLayout, TileType as TileTypeVal } from "../../shared/types";
+import type { Character } from "../office/Character";
+import { createCharacter, drawCharacter } from "../office/Character";
+import { updateCharacter } from "../office/CharacterState";
 
 // ── Default layout (simple 11x11 office) ─────────────────────
 
@@ -46,6 +49,32 @@ export default function OfficeCanvas() {
   const tileMapRef = useRef<TileTypeVal[][]>(layoutToTileMap(layoutRef.current));
   const entitiesRef = useRef<RenderEntity[]>([]);
   const zoomRef = useRef(ZOOM_DEFAULT);
+
+  // Test characters: one typing (active), one idle, one walking
+  const charactersRef = useRef<Character[]>(() => {
+    const typing = createCharacter(1, 0, 3, 3);
+    typing.isActive = true;
+    typing.state = CharacterState.TYPE;
+
+    const idle = createCharacter(2, 1, 7, 5);
+
+    const walking = createCharacter(3, 2, 5, 3);
+    walking.state = CharacterState.WALK;
+    walking.path = [
+      { col: 6, row: 3 },
+      { col: 7, row: 3 },
+      { col: 7, row: 4 },
+      { col: 7, row: 5 },
+      { col: 7, row: 6 },
+      { col: 6, row: 6 },
+      { col: 5, row: 6 },
+      { col: 5, row: 5 },
+      { col: 5, row: 4 },
+      { col: 5, row: 3 },
+    ];
+
+    return [typing, idle, walking];
+  });
 
   /** Resize the canvas to fill its container at the correct device pixel ratio. */
   const resizeCanvas = useCallback(() => {
@@ -106,8 +135,30 @@ export default function OfficeCanvas() {
 
     // Start the game loop
     const stopLoop = startGameLoop(canvas, {
-      update: (_dt: number) => {
-        // Future: update character animations, pathfinding, etc.
+      update: (dt: number) => {
+        // Update all test characters
+        for (const ch of charactersRef.current) {
+          updateCharacter(ch, dt);
+
+          // Loop the walking character back when path is exhausted
+          if (ch.id === 3 && ch.state !== CharacterState.WALK) {
+            ch.state = CharacterState.WALK;
+            ch.frame = 0;
+            ch.frameTimer = 0;
+            ch.path = [
+              { col: 6, row: 3 },
+              { col: 7, row: 3 },
+              { col: 7, row: 4 },
+              { col: 7, row: 5 },
+              { col: 7, row: 6 },
+              { col: 6, row: 6 },
+              { col: 5, row: 6 },
+              { col: 5, row: 5 },
+              { col: 5, row: 4 },
+              { col: 5, row: 3 },
+            ];
+          }
+        }
       },
       render: (ctx: CanvasRenderingContext2D) => {
         const c = canvasRef.current;
@@ -125,6 +176,18 @@ export default function OfficeCanvas() {
           entitiesRef.current,
           zoomRef.current,
         );
+
+        // Draw characters on top of the tile grid
+        const layout = layoutRef.current;
+        const zoom = zoomRef.current;
+        const mapW = layout.cols * TILE_SIZE * zoom;
+        const mapH = layout.rows * TILE_SIZE * zoom;
+        const offsetX = Math.floor((rect.width - mapW) / 2);
+        const offsetY = Math.floor((rect.height - mapH) / 2);
+
+        for (const ch of charactersRef.current) {
+          drawCharacter(ctx, ch, offsetX, offsetY, zoom);
+        }
       },
     });
 
