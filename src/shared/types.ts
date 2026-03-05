@@ -148,6 +148,10 @@ export const IpcChannels = {
   AGENT_UPDATE: "agent-update",
   /** Main → renderer: push loaded asset data (send/on). */
   ASSETS_LOADED: "assets-loaded",
+  /** Main → renderer: request to open settings panel (send/on). */
+  OPEN_SETTINGS: "open-settings",
+  /** Renderer → main: toggle always-on-top window state (invoke/handle). */
+  TOGGLE_ALWAYS_ON_TOP: "toggle-always-on-top",
 } as const;
 
 // ─── Preload API type ────────────────────────────────────────────────────────
@@ -160,4 +164,8 @@ export interface PixelAgentsApi {
   onAgentUpdate(callback: (update: AgentUpdate) => void): () => void;
   /** Subscribe to asset data pushed from the main process. */
   onAssetsLoaded(callback: (assets: unknown) => void): () => void;
+  /** Subscribe to settings panel open requests from the main process (tray menu). */
+  onOpenSettings(callback: () => void): () => void;
+  /** Toggle the always-on-top window state. */
+  toggleAlwaysOnTop(alwaysOnTop: boolean): Promise<void>;
 }

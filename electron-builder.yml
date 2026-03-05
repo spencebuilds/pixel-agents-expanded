@@ -1,4 +1,4 @@
-appId: com.spencebuilds.pixel-agents-expanded
+appId: com.spencebuilds.pixel-agents
 productName: Pixel Agents
 copyright: Copyright © 2024-2026 spencebuilds
 
@@ -9,6 +9,14 @@ directories:
 files:
   - dist/**/*
   - package.json
+  - scripts/**/*
+  - assets/**/*
+  - "!assets/premium/**/*"
+
+publish:
+  provider: github
+  owner: spencebuilds
+  repo: pixel-agents-expanded
 
 mac:
   category: public.app-category.developer-tools

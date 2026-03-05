@@ -36,10 +36,17 @@ export function sendAgentUpdate(win: BrowserWindow | null): void {
  *
  * @param mainWindow — the primary BrowserWindow (used for push messages).
  */
-export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
+export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IpcChannels.GET_AGENTS, () => {
     return agents;
   });
 
-  // Future handlers will be registered here.
+  ipcMain.handle(
+    IpcChannels.TOGGLE_ALWAYS_ON_TOP,
+    (_event, alwaysOnTop: boolean) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.setAlwaysOnTop(alwaysOnTop);
+      }
+    }
+  );
 }

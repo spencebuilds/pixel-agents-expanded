@@ -12,7 +12,10 @@
     "build": "tsc -p tsconfig.node.json && vite build",
     "build:electron": "npm run build && electron-builder",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "setup-hooks": "tsc -p tsconfig.scripts.json && node dist/scripts/setup-hooks.js",
+    "setup-hooks:uninstall": "tsc -p tsconfig.scripts.json && node dist/scripts/setup-hooks.js --uninstall",
+    "import-tileset": "npx tsc -p tsconfig.scripts.json && node dist/scripts/import-tileset.js"
   },
   "dependencies": {
     "chokidar": "^4.0.3",

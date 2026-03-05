@@ -24,6 +24,18 @@ const api: PixelAgentsApi = {
       ipcRenderer.removeListener(IpcChannels.ASSETS_LOADED, handler);
     };
   },
+
+  onOpenSettings(callback: () => void): () => void {
+    const handler = () => callback();
+    ipcRenderer.on(IpcChannels.OPEN_SETTINGS, handler);
+    return () => {
+      ipcRenderer.removeListener(IpcChannels.OPEN_SETTINGS, handler);
+    };
+  },
+
+  toggleAlwaysOnTop(alwaysOnTop: boolean): Promise<void> {
+    return ipcRenderer.invoke(IpcChannels.TOGGLE_ALWAYS_ON_TOP, alwaysOnTop);
+  },
 };
 
 contextBridge.exposeInMainWorld("pixelAgents", api);
