@@ -1,0 +1,50 @@
+:root {
+  --pixel-bg: #1a1a2e;
+  --pixel-border: #4a4a6a;
+  --pixel-border-light: #6a6a8a;
+  --pixel-accent: #5a8cff;
+  --pixel-green: #5ac88c;
+  --pixel-shadow: 2px 2px 0px #0a0a14;
+  --pixel-text: rgba(255, 255, 255, 0.8);
+  --pixel-text-dim: rgba(255, 255, 255, 0.7);
+  --pixel-vignette: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--pixel-bg);
+  color: var(--pixel-text);
+  font-family: monospace;
+  cursor: default;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
