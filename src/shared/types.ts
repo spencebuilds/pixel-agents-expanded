@@ -86,6 +86,46 @@ export interface Seat {
   assigned: boolean;
 }
 
+// ─── Transcript parser types ─────────────────────────────────────────────────
+
+/** Internal state tracked per agent by the transcript parser (main-process only). */
+export interface AgentSession {
+  id: number;
+  projectDir: string;
+  jsonlFile: string;
+  fileOffset: number;
+  lineBuffer: string;
+  activeToolIds: Set<string>;
+  activeToolStatuses: Map<string, string>;
+  activeToolNames: Map<string, string>;
+  /** parentToolId -> active sub-tool IDs */
+  activeSubagentToolIds: Map<string, Set<string>>;
+  /** parentToolId -> (subToolId -> toolName) */
+  activeSubagentToolNames: Map<string, Map<string, string>>;
+  isWaiting: boolean;
+  permissionSent: boolean;
+  hadToolsInTurn: boolean;
+  folderName?: string;
+}
+
+/** Events emitted by the transcript parser. */
+export interface TranscriptEvents {
+  agentStatus: { id: number; status: "active" | "waiting" };
+  agentToolStart: { id: number; toolId: string; status: string };
+  agentToolDone: { id: number; toolId: string };
+  agentToolsClear: { id: number };
+  agentToolPermission: { id: number };
+  subagentToolStart: {
+    id: number;
+    parentToolId: string;
+    toolId: string;
+    status: string;
+  };
+  subagentToolDone: { id: number; parentToolId: string; toolId: string };
+  subagentClear: { id: number; parentToolId: string };
+  subagentToolPermission: { id: number; parentToolId: string };
+}
+
 // ─── IPC channel constants ───────────────────────────────────────────────────
 
 /**
