@@ -1,36 +1,27 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
+import { IpcChannels } from "../shared/types";
+import type { Agent, AgentUpdate, PixelAgentsApi } from "../shared/types";
 
-export interface PixelAgentsAPI {
-  /** Subscribe to agent state updates pushed from the main process. */
-  onAgentUpdate(callback: (agents: unknown[]) => void): () => void;
-
-  /** Request the current list of agents from the main process. */
-  getAgents(): Promise<unknown[]>;
-
-  /** Subscribe to asset data pushed from the main process. */
-  onAssetsLoaded(callback: (assets: unknown) => void): () => void;
-}
-
-const api: PixelAgentsAPI = {
-  onAgentUpdate(callback: (agents: unknown[]) => void): () => void {
-    const handler = (_event: IpcRendererEvent, agents: unknown[]) =>
-      callback(agents);
-    ipcRenderer.on("agent-update", handler);
+const api: PixelAgentsApi = {
+  onAgentUpdate(callback: (update: AgentUpdate) => void): () => void {
+    const handler = (_event: IpcRendererEvent, update: AgentUpdate) =>
+      callback(update);
+    ipcRenderer.on(IpcChannels.AGENT_UPDATE, handler);
     return () => {
-      ipcRenderer.removeListener("agent-update", handler);
+      ipcRenderer.removeListener(IpcChannels.AGENT_UPDATE, handler);
     };
   },
 
-  getAgents(): Promise<unknown[]> {
-    return ipcRenderer.invoke("get-agents");
+  getAgents(): Promise<Agent[]> {
+    return ipcRenderer.invoke(IpcChannels.GET_AGENTS);
   },
 
   onAssetsLoaded(callback: (assets: unknown) => void): () => void {
     const handler = (_event: IpcRendererEvent, assets: unknown) =>
       callback(assets);
-    ipcRenderer.on("assets-loaded", handler);
+    ipcRenderer.on(IpcChannels.ASSETS_LOADED, handler);
     return () => {
-      ipcRenderer.removeListener("assets-loaded", handler);
+      ipcRenderer.removeListener(IpcChannels.ASSETS_LOADED, handler);
     };
   },
 };

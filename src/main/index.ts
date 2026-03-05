@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import * as path from "path";
+import { registerIpcHandlers } from "./ipc";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -15,13 +16,15 @@ function createWindow(): void {
     },
   });
 
+  registerIpcHandlers(mainWindow);
+
   if (!app.isPackaged) {
     // Development: load from Vite dev server
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
     // Production: load the built renderer
-    mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(path.join(__dirname, "../../renderer/index.html"));
   }
 
   mainWindow.on("closed", () => {

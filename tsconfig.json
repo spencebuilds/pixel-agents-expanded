@@ -22,6 +22,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/renderer"],
+  "include": ["src/renderer", "src/shared"],
   "exclude": ["node_modules", "dist"]
 }

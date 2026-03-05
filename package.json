@@ -4,7 +4,7 @@
   "description": "Pixel art office where your Claude Code agents come to life as animated characters — standalone Electron app",
   "author": "spencebuilds",
   "license": "MIT",
-  "main": "dist/main/index.js",
+  "main": "dist/main/main/index.js",
   "scripts": {
     "dev": "tsc -p tsconfig.node.json && concurrently -k \"vite\" \"tsc -p tsconfig.node.json --watch --preserveWatchOutput\" \"wait-on http://localhost:5173 && electron .\"",
     "dev:vite": "vite",
