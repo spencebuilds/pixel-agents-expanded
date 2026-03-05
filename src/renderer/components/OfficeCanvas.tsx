@@ -3,11 +3,17 @@ import { startGameLoop } from "../office/GameLoop";
 import { render, layoutToTileMap } from "../office/OfficeRenderer";
 import type { RenderEntity } from "../office/OfficeRenderer";
 import { TILE_SIZE, ZOOM_DEFAULT } from "../office/constants";
-import { TileType, CharacterState } from "../../shared/types";
-import type { OfficeLayout, TileType as TileTypeVal } from "../../shared/types";
+import { TileType } from "../../shared/types";
+import type { OfficeLayout, TileType as TileTypeVal, Seat } from "../../shared/types";
 import type { Character } from "../office/Character";
-import { createCharacter, drawCharacter } from "../office/Character";
+import { drawCharacter } from "../office/Character";
 import { updateCharacter } from "../office/CharacterState";
+import { getWalkableTiles } from "../office/Pathfinding";
+import { DeskManager } from "../office/DeskManager";
+import {
+  PMCharacter,
+  drawSpeechBubble,
+} from "../office/PMCharacter";
 
 // ── Default layout (simple 11x11 office) ─────────────────────
 
@@ -23,7 +29,8 @@ function createDefaultLayout(): OfficeLayout {
         tiles.push(TileType.WALL);
       } else {
         // Alternate between floor patterns for visual variety
-        const pattern = ((r + c) % 2 === 0) ? TileType.FLOOR_1 : TileType.FLOOR_2;
+        const pattern =
+          (r + c) % 2 === 0 ? TileType.FLOOR_1 : TileType.FLOOR_2;
         tiles.push(pattern);
       }
     }
@@ -46,34 +53,35 @@ export default function OfficeCanvas() {
 
   // Store mutable state in refs so the game loop closure stays up to date
   const layoutRef = useRef<OfficeLayout>(createDefaultLayout());
-  const tileMapRef = useRef<TileTypeVal[][]>(layoutToTileMap(layoutRef.current));
+  const tileMapRef = useRef<TileTypeVal[][]>(
+    layoutToTileMap(layoutRef.current),
+  );
   const entitiesRef = useRef<RenderEntity[]>([]);
   const zoomRef = useRef(ZOOM_DEFAULT);
 
-  // Test characters: one typing (active), one idle, one walking
-  const charactersRef = useRef<Character[]>(() => {
-    const typing = createCharacter(1, 0, 3, 3);
-    typing.isActive = true;
-    typing.state = CharacterState.TYPE;
+  // Pathfinding and desk management state
+  const blockedTilesRef = useRef<Set<string>>(new Set());
+  const walkableTilesRef = useRef<Array<{ col: number; row: number }>>(
+    getWalkableTiles(tileMapRef.current, blockedTilesRef.current),
+  );
+  const deskManagerRef = useRef<DeskManager>(
+    new DeskManager(layoutRef.current),
+  );
+  const seatsRef = useRef<Map<string, Seat>>(
+    deskManagerRef.current.getAllSeats(),
+  );
 
-    const idle = createCharacter(2, 1, 7, 5);
+  // Characters list (regular agents, managed externally in future)
+  const charactersRef = useRef<Character[]>([]);
 
-    const walking = createCharacter(3, 2, 5, 3);
-    walking.state = CharacterState.WALK;
-    walking.path = [
-      { col: 6, row: 3 },
-      { col: 7, row: 3 },
-      { col: 7, row: 4 },
-      { col: 7, row: 5 },
-      { col: 7, row: 6 },
-      { col: 6, row: 6 },
-      { col: 5, row: 6 },
-      { col: 5, row: 5 },
-      { col: 5, row: 4 },
-      { col: 5, row: 3 },
-    ];
-
-    return [typing, idle, walking];
+  // PM character: always present, wanders and talks
+  const pmRef = useRef<PMCharacter>(() => {
+    const walkable = walkableTilesRef.current;
+    if (walkable.length > 0) {
+      const spawn = walkable[Math.floor(Math.random() * walkable.length)];
+      return new PMCharacter(spawn.col, spawn.row);
+    }
+    return new PMCharacter(5, 5);
   });
 
   /** Resize the canvas to fill its container at the correct device pixel ratio. */
@@ -136,29 +144,18 @@ export default function OfficeCanvas() {
     // Start the game loop
     const stopLoop = startGameLoop(canvas, {
       update: (dt: number) => {
-        // Update all test characters
-        for (const ch of charactersRef.current) {
-          updateCharacter(ch, dt);
+        const tileMap = tileMapRef.current;
+        const blockedTiles = blockedTilesRef.current;
+        const walkableTiles = walkableTilesRef.current;
+        const seats = seatsRef.current;
 
-          // Loop the walking character back when path is exhausted
-          if (ch.id === 3 && ch.state !== CharacterState.WALK) {
-            ch.state = CharacterState.WALK;
-            ch.frame = 0;
-            ch.frameTimer = 0;
-            ch.path = [
-              { col: 6, row: 3 },
-              { col: 7, row: 3 },
-              { col: 7, row: 4 },
-              { col: 7, row: 5 },
-              { col: 7, row: 6 },
-              { col: 6, row: 6 },
-              { col: 5, row: 6 },
-              { col: 5, row: 5 },
-              { col: 5, row: 4 },
-              { col: 5, row: 3 },
-            ];
-          }
+        // Update regular agent characters with pathfinding
+        for (const ch of charactersRef.current) {
+          updateCharacter(ch, dt, walkableTiles, seats, tileMap, blockedTiles);
         }
+
+        // Update PM character (has its own state machine with wander + speech)
+        pmRef.current.update(dt, walkableTiles, tileMap, blockedTiles);
       },
       render: (ctx: CanvasRenderingContext2D) => {
         const c = canvasRef.current;
@@ -177,7 +174,7 @@ export default function OfficeCanvas() {
           zoomRef.current,
         );
 
-        // Draw characters on top of the tile grid
+        // Compute map offsets for character drawing
         const layout = layoutRef.current;
         const zoom = zoomRef.current;
         const mapW = layout.cols * TILE_SIZE * zoom;
@@ -185,8 +182,27 @@ export default function OfficeCanvas() {
         const offsetX = Math.floor((rect.width - mapW) / 2);
         const offsetY = Math.floor((rect.height - mapH) / 2);
 
+        // Draw regular agent characters
         for (const ch of charactersRef.current) {
           drawCharacter(ctx, ch, offsetX, offsetY, zoom);
+        }
+
+        // Draw PM character
+        const pmCh = pmRef.current.getCharacter();
+        drawCharacter(ctx, pmCh, offsetX, offsetY, zoom);
+
+        // Draw PM speech bubble if active
+        const bubble = pmRef.current.speechBubble;
+        if (bubble) {
+          drawSpeechBubble(
+            ctx,
+            bubble,
+            pmCh.x,
+            pmCh.y,
+            offsetX,
+            offsetY,
+            zoom,
+          );
         }
       },
     });
