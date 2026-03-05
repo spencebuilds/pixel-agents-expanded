@@ -13,8 +13,6 @@ import { getCharacterSprites } from "./sprites/spriteData";
 import { getCachedSprite } from "./sprites/spriteCache";
 import {
   TILE_SIZE,
-  CHARACTER_FRAME_WIDTH,
-  CHARACTER_FRAME_HEIGHT,
   CHARACTER_SITTING_OFFSET_PX,
   CHARACTER_Z_SORT_OFFSET,
 } from "./constants";

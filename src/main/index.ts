@@ -30,7 +30,7 @@ function createWindow(): void {
   if (!app.isPackaged) {
     // Development: load from Vite dev server
     mainWindow.loadURL("http://localhost:5173");
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
     // Production: load the built renderer
     mainWindow.loadFile(path.join(__dirname, "../../renderer/index.html"));

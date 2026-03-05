@@ -1,6 +1,9 @@
-import { useState, type CSSProperties } from "react";
+import { useState, useCallback, type CSSProperties } from "react";
 import type { PixelAgentsApi } from "../../shared/types.ts";
 import About from "./About.tsx";
+import FirstLaunch from "./FirstLaunch.tsx";
+
+const ASSET_TIER_KEY = "pixel-agents-asset-tier";
 
 /** Type-safe accessor for the preload API exposed on `window`. */
 function getApi(): PixelAgentsApi {
@@ -129,6 +132,12 @@ export default function Settings({ onClose }: SettingsProps) {
   const [showAgentCount, setShowAgentCount] = useState(true);
   const [showHooksInfo, setShowHooksInfo] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showAssetPicker, setShowAssetPicker] = useState(false);
+  const currentTier = localStorage.getItem(ASSET_TIER_KEY) ?? "free";
+
+  const handleAssetPickerComplete = useCallback(() => {
+    setShowAssetPicker(false);
+  }, []);
 
   const handleAlwaysOnTop = () => {
     const next = !alwaysOnTop;
@@ -180,6 +189,32 @@ export default function Settings({ onClose }: SettingsProps) {
           </button>
         </div>
 
+        {/* Asset tier */}
+        <div style={{ ...rowStyle, flexDirection: "column", alignItems: "stretch", gap: "6px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={labelStyle}>Asset pack</span>
+            <span style={{ fontSize: "12px", color: "#a6adc8" }}>
+              {currentTier === "premium" ? "Premium" : "Free"}
+            </span>
+          </div>
+          <button
+            style={{ ...buttonStyle, marginTop: 0 }}
+            onClick={() => {
+              setShowAssetPicker(true);
+              setShowHooksInfo(false);
+              setShowAbout(false);
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLElement).style.backgroundColor = "#45475a";
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLElement).style.backgroundColor = "#313244";
+            }}
+          >
+            Change Asset Pack
+          </button>
+        </div>
+
         {/* Setup Hooks button */}
         <button
           style={buttonStyle}
@@ -222,6 +257,10 @@ export default function Settings({ onClose }: SettingsProps) {
           <About onClose={() => setShowAbout(false)} />
         )}
       </div>
+
+      {showAssetPicker && (
+        <FirstLaunch onComplete={handleAssetPickerComplete} />
+      )}
     </div>
   );
 }

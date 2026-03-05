@@ -75,14 +75,16 @@ export default function OfficeCanvas() {
   const charactersRef = useRef<Character[]>([]);
 
   // PM character: always present, wanders and talks
-  const pmRef = useRef<PMCharacter>(() => {
+  const pmRef = useRef<PMCharacter>(null!);
+  if (pmRef.current === null) {
     const walkable = walkableTilesRef.current;
     if (walkable.length > 0) {
       const spawn = walkable[Math.floor(Math.random() * walkable.length)];
-      return new PMCharacter(spawn.col, spawn.row);
+      pmRef.current = new PMCharacter(spawn.col, spawn.row);
+    } else {
+      pmRef.current = new PMCharacter(5, 5);
     }
-    return new PMCharacter(5, 5);
-  });
+  }
 
   /** Resize the canvas to fill its container at the correct device pixel ratio. */
   const resizeCanvas = useCallback(() => {
