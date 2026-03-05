@@ -2,9 +2,11 @@ import { app, BrowserWindow } from "electron";
 import * as path from "path";
 import { registerIpcHandlers, sendAgentUpdate, setAgents } from "./ipc";
 import { TranscriptWatcher } from "./transcriptWatcher";
+import { startWebSocketServer } from "./websocketServer";
 import type { Agent } from "../shared/types";
 
 let mainWindow: BrowserWindow | null = null;
+let stopWebSocketServer: (() => void) | null = null;
 const transcriptWatcher = new TranscriptWatcher();
 
 function createWindow(): void {
@@ -127,14 +129,26 @@ function wireTranscriptEvents(): void {
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   wireTranscriptEvents();
   transcriptWatcher.startWatching();
+
+  try {
+    const ws = await startWebSocketServer();
+    stopWebSocketServer = ws.stop;
+    console.log(`[main] WebSocket server started on port ${ws.port}`);
+  } catch (err) {
+    console.error("[main] Failed to start WebSocket server:", err);
+  }
 });
 
 app.on("window-all-closed", () => {
   transcriptWatcher.stopWatching();
+  if (stopWebSocketServer) {
+    stopWebSocketServer();
+    stopWebSocketServer = null;
+  }
   if (process.platform !== "darwin") {
     app.quit();
   }
